@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>하남시 금속업체 기업정보 조회</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#1a3a5c;--navy-dark:#0f2540;--navy-light:#2a5480;
+  --steel:#4a7fa5;--steel-light:#e8f2f9;--steel-pale:#f4f8fc;
+  --accent:#e8501a;--accent-light:#fff0eb;
+  --success:#1a7a4a;--success-bg:#e8f5ee;
+  --warn:#b85c00;--warn-bg:#fff4e6;
+  --err:#b82020;--err-bg:#fdf0f0;
+  --gray:#6b7280;--gray-light:#f3f4f6;
+  --border:#d1dce8;--text:#1a2533;--text-muted:#5a6a7a;
+  --bg:#f0f4f8;--white:#ffffff;
+  --radius:8px;--radius-lg:12px;
+}
+body{font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.6}
+
+/* Header */
+.site-header{background:var(--navy-dark);position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.25)}
+.header-inner{max-width:1280px;margin:0 auto;padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none}
+.logo-icon{width:32px;height:32px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center}
+.logo-text{font-size:15px;font-weight:700;letter-spacing:-.3px}
+.logo-sub{font-size:11px;color:rgba(255,255,255,.5);margin-top:1px}
+.header-right{display:flex;align-items:center;gap:10px}
+.header-badge{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.8);font-size:11px;padding:4px 12px;border-radius:20px}
+
+/* Hero */
+.hero{background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 60%,var(--navy-light) 100%);padding:40px 24px 36px;text-align:center;color:#fff;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/svg%3E") repeat}
+.hero-eyebrow{font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:10px}
+.hero h1{font-size:26px;font-weight:800;letter-spacing:-.5px;margin-bottom:8px}
+.hero h1 span{color:#f4a460}
+.hero p{font-size:13px;color:rgba(255,255,255,.6);max-width:500px;margin:0 auto}
+
+/* Main */
+.main{max-width:1280px;margin:0 auto;padding:24px 24px 60px}
+
+/* Stats */
+.stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:18px}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;display:flex;align-items:center;gap:12px}
+.stat-icon{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:17px}
+.stat-icon.blue{background:#dbeafe}.stat-icon.green{background:var(--success-bg)}
+.stat-icon.orange{background:var(--warn-bg)}.stat-icon.red{background:var(--err-bg)}.stat-icon.purple{background:#f3e8ff}
+.stat-label{font-size:11px;color:var(--text-muted);font-weight:500}
+.stat-value{font-size:22px;font-weight:800;color:var(--text);letter-spacing:-.5px}
+
+/* Panel */
+.panel{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:16px}
+.panel-header{padding:14px 20px;border-bottom:1px solid var(--border);background:var(--steel-pale);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.panel-title{font-size:13px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:6px}
+.panel-title svg{opacity:.7}
+
+/* ── STEP TABS ── */
+.step-tabs{display:flex;gap:0;border-bottom:1px solid var(--border)}
+.step-tab{flex:1;padding:14px 16px;text-align:center;font-size:13px;font-weight:600;color:var(--text-muted);cursor:pointer;border-bottom:3px solid transparent;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;background:none;border-top:none;border-left:none;border-right:none}
+.step-tab:hover{background:var(--steel-pale);color:var(--navy)}
+.step-tab.active{color:var(--navy);border-bottom-color:var(--navy);background:var(--steel-pale)}
+.step-num{width:22px;height:22px;border-radius:50%;background:var(--border);color:var(--text-muted);font-size:11px;display:flex;align-items:center;justify-content:center;font-weight:700}
+.step-tab.active .step-num{background:var(--navy);color:#fff}
+.step-tab.done .step-num{background:var(--success);color:#fff}
+.step-content{display:none;padding:24px}
+.step-content.active{display:block}
+
+/* Upload zone */
+.upload-zone{border:2px dashed var(--border);border-radius:var(--radius-lg);padding:48px 24px;text-align:center;cursor:pointer;transition:all .2s;position:relative}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--steel);background:var(--steel-pale)}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-icon{font-size:40px;margin-bottom:12px}
+.upload-title{font-size:16px;font-weight:700;color:var(--navy);margin-bottom:6px}
+.upload-desc{font-size:12px;color:var(--text-muted);line-height:1.8}
+.upload-desc code{background:var(--gray-light);padding:1px 6px;border-radius:4px;font-family:monospace;font-size:11px}
+
+/* Column mapping */
+.col-map{margin-top:20px;display:none}
+.col-map-title{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.col-map-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.col-map-item{background:var(--steel-pale);border:1px solid var(--border);border-radius:var(--radius);padding:12px}
+.col-map-label{font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.col-map-select{width:100%;height:32px;border:1px solid var(--border);border-radius:6px;padding:0 8px;font-size:12px;background:#fff;color:var(--text);outline:none;cursor:pointer}
+.col-map-select:focus{border-color:var(--steel)}
+
+/* Preview table */
+.preview-wrap{margin-top:16px;overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius);max-height:200px;overflow-y:auto}
+.preview-table{width:100%;border-collapse:collapse;font-size:11px;min-width:600px}
+.preview-table th{background:var(--navy-dark);color:rgba(255,255,255,.85);padding:7px 12px;text-align:left;font-size:11px;white-space:nowrap;position:sticky;top:0}
+.preview-table td{padding:6px 12px;border-bottom:1px solid #eef2f7;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis}
+.preview-table tr:hover td{background:var(--steel-pale)}
+
+/* Upload confirm */
+.upload-confirm{margin-top:16px;display:none;background:var(--success-bg);border:1px solid #a0d4b8;border-radius:var(--radius);padding:14px 16px;display:none;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.upload-confirm .conf-info{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;color:var(--success)}
+.sample-btn{font-size:11px;color:var(--steel);text-decoration:underline;cursor:pointer;background:none;border:none;padding:0}
+
+/* API & Search config */
+.config-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.config-item label{display:block;font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.config-item input,.config-item select{width:100%;height:38px;border:1px solid var(--border);border-radius:var(--radius);padding:0 12px;font-size:13px;color:var(--text);background:#fff;outline:none;transition:border-color .2s}
+.config-item input:focus,.config-item select:focus{border-color:var(--steel);box-shadow:0 0 0 3px rgba(74,127,165,.12)}
+
+/* Search condition selector */
+.search-cond-box{background:var(--steel-pale);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:20px}
+.search-cond-title{font-size:12px;font-weight:700;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.cond-options{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.cond-option{position:relative}
+.cond-option input[type=radio]{position:absolute;opacity:0;width:0;height:0}
+.cond-option label{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 8px;border:1.5px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:all .2s;background:#fff;text-align:center}
+.cond-option label:hover{border-color:var(--steel);background:var(--steel-light)}
+.cond-option input:checked + label{border-color:var(--navy);background:var(--steel-light);box-shadow:0 0 0 3px rgba(26,58,92,.1)}
+.cond-icon{font-size:20px}
+.cond-name{font-size:12px;font-weight:700;color:var(--navy)}
+.cond-desc{font-size:10px;color:var(--text-muted)}
+.cond-gb{font-size:10px;font-family:monospace;background:var(--gray-light);padding:1px 6px;border-radius:4px;color:var(--gray)}
+
+/* Buttons */
+.btn{height:38px;padding:0 18px;border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;border:1px solid transparent;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;transition:all .15s;text-decoration:none}
+.btn-lg{height:44px;padding:0 24px;font-size:14px}
+.btn-primary{background:var(--navy);color:#fff;border-color:var(--navy)}
+.btn-primary:hover:not(:disabled){background:var(--navy-dark)}
+.btn-primary:disabled{background:#93afc8;border-color:#93afc8;cursor:not-allowed}
+.btn-danger{background:#fff;color:var(--err);border-color:#f0b8b8}
+.btn-danger:hover:not(:disabled){background:var(--err-bg)}
+.btn-danger:disabled{opacity:.4;cursor:not-allowed}
+.btn-success{background:var(--success);color:#fff;border-color:var(--success)}
+.btn-success:hover:not(:disabled){background:#145e38}
+.btn-success:disabled{background:#8bbfa0;border-color:#8bbfa0;cursor:not-allowed}
+.btn-outline{background:#fff;color:var(--navy);border-color:var(--border)}
+.btn-outline:hover{background:var(--steel-pale)}
+.btn-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+/* Progress */
+.progress-section{padding:16px 20px;border-bottom:1px solid var(--border)}
+.progress-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.progress-text{font-size:12px;color:var(--text-muted)}
+.progress-pct{font-size:13px;font-weight:700;color:var(--navy)}
+.progress-track{height:6px;background:var(--gray-light);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--steel),var(--navy));border-radius:3px;transition:width .4s;width:0}
+.progress-sub{margin-top:6px;font-size:11px;color:var(--text-muted);display:flex;gap:14px;flex-wrap:wrap}
+
+/* Filter bar */
+.filter-bar{padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--steel-pale)}
+.filter-input{height:32px;border:1px solid var(--border);border-radius:var(--radius);padding:0 10px;font-size:12px;background:#fff;color:var(--text);outline:none;width:180px}
+.filter-input:focus{border-color:var(--steel)}
+.filter-select{height:32px;border:1px solid var(--border);border-radius:var(--radius);padding:0 8px;font-size:12px;background:#fff;color:var(--text);outline:none;cursor:pointer}
+.filter-label{font-size:12px;color:var(--text-muted);font-weight:600}
+
+/* Table */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px;min-width:1000px}
+thead th{background:var(--navy-dark);color:rgba(255,255,255,.85);padding:10px 14px;text-align:left;font-weight:600;font-size:11px;letter-spacing:.3px;white-space:nowrap;position:sticky;top:60px;z-index:10}
+tbody tr{border-bottom:1px solid #eef2f7;transition:background .1s}
+tbody tr:hover{background:var(--steel-pale)}
+tbody tr.status-ok{border-left:3px solid var(--success)}
+tbody tr.status-none{border-left:3px solid var(--warn)}
+tbody tr.status-err{border-left:3px solid var(--err)}
+tbody tr.status-loading{border-left:3px solid var(--steel)}
+td{padding:9px 14px;vertical-align:middle;color:var(--text);word-break:break-all}
+td.num{color:var(--text-muted);font-size:11px;width:36px;text-align:center;word-break:keep-all}
+td.name{font-weight:700;font-size:13px;min-width:120px;word-break:keep-all}
+td.muted{color:var(--text-muted);font-size:11px}
+a.link{color:var(--navy);text-decoration:none;font-weight:500}
+a.link:hover{text-decoration:underline;color:var(--accent)}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:700;white-space:nowrap}
+.badge-wait{background:#f3f4f6;color:#6b7280}
+.badge-loading{background:#dbeafe;color:#1e40af}
+.badge-ok{background:var(--success-bg);color:var(--success)}
+.badge-none{background:var(--warn-bg);color:var(--warn)}
+.badge-err{background:var(--err-bg);color:var(--err)}
+.spinner{width:10px;height:10px;border:2px solid #93c5fd;border-top-color:#1e40af;border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.dash{color:var(--border)}
+
+/* Empty */
+.empty-state{padding:48px 20px;text-align:center;color:var(--text-muted)}
+.empty-state .ei{font-size:40px;margin-bottom:12px}
+.empty-state p{font-size:13px}
+.empty-state .sub{font-size:12px;margin-top:6px;color:var(--gray)}
+
+/* Alert */
+.alert{padding:12px 16px;border-radius:var(--radius);font-size:13px;margin-bottom:16px;display:flex;align-items:flex-start;gap:10px}
+.alert-info{background:#dbeafe;border:1px solid #93c5fd;color:#1e3a5f}
+.alert-warn{background:var(--warn-bg);border:1px solid #f6c790;color:#7c3d00}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--navy-dark);color:#fff;padding:12px 18px;border-radius:var(--radius-lg);font-size:13px;box-shadow:0 4px 20px rgba(0,0,0,.3);z-index:9999;transform:translateY(80px);opacity:0;transition:all .3s}
+.toast.show{transform:translateY(0);opacity:1}
+
+/* Footer */
+.site-footer{background:var(--navy-dark);color:rgba(255,255,255,.35);text-align:center;padding:20px;font-size:11px;margin-top:40px}
+
+@media(max-width:900px){
+  .stats-row{grid-template-columns:repeat(3,1fr)}
+  .cond-options{grid-template-columns:repeat(2,1fr)}
+  .config-grid{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+  .hero h1{font-size:20px}
+  .step-tab .step-name{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="site-header">
+  <div class="header-inner">
+    <a class="logo" href="#">
+      <div class="logo-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+      </div>
+      <div>
+        <div class="logo-text">금속업체 조회 시스템</div>
+        <div class="logo-sub">bizno.net API 연동</div>
+      </div>
+    </a>
+    <div class="header-right">
+      <span class="header-badge" id="h-badge">업체 미등록</span>
+    </div>
+  </div>
+</header>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-eyebrow">Business Info Lookup · bizno.net API</div>
+  <h1>금속업체 <span>기업정보</span> 조회 시스템</h1>
+  <p>엑셀 업로드로 업체를 등록하고 상호명·전화번호·대표자·사업자번호로 일괄 조회합니다</p>
+</div>
+
+<!-- Main -->
+<main class="main">
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon blue">🏭</div>
+      <div><div class="stat-label">등록 업체</div><div class="stat-value" id="s-total">0</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon green">✅</div>
+      <div><div class="stat-label">조회 완료</div><div class="stat-value" id="s-done" style="color:var(--success)">0</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon purple">🌐</div>
+      <div><div class="stat-label">홈페이지</div><div class="stat-value" id="s-hp" style="color:var(--navy)">0</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon orange">✉️</div>
+      <div><div class="stat-label">이메일</div><div class="stat-value" id="s-email" style="color:var(--accent)">0</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon red">❌</div>
+      <div><div class="stat-label">미등록/오류</div><div class="stat-value" id="s-fail" style="color:var(--err)">0</div></div>
+    </div>
+  </div>
+
+  <!-- Main Panel -->
+  <div class="panel">
+    <div class="step-tabs">
+      <button class="step-tab active" onclick="switchTab(1)" id="tab1">
+        <span class="step-num" id="sn1">1</span>
+        <span class="step-name">📂 업체 등록 (엑셀 업로드)</span>
+      </button>
+      <button class="step-tab" onclick="switchTab(2)" id="tab2">
+        <span class="step-num" id="sn2">2</span>
+        <span class="step-name">⚙️ 조회 설정</span>
+      </button>
+      <button class="step-tab" onclick="switchTab(3)" id="tab3">
+        <span class="step-num" id="sn3">3</span>
+        <span class="step-name">📊 조회 결과</span>
+      </button>
+    </div>
+
+    <!-- STEP 1: 업체 등록 -->
+    <div class="step-content active" id="step1">
+
+      <div class="alert alert-info">
+        <span>ℹ️</span>
+        <div>엑셀(.xlsx/.xls) 또는 CSV 파일을 업로드하세요. 업로드 후 열 매핑을 확인하고 등록을 완료합니다.<br>
+        <button class="sample-btn" onclick="downloadSample()">📥 샘플 엑셀 파일 다운로드</button></div>
+      </div>
+
+      <!-- Upload zone -->
+      <div class="upload-zone" id="upload-zone"
+           ondragover="event.preventDefault();this.classList.add('drag')"
+           ondragleave="this.classList.remove('drag')"
+           ondrop="handleDrop(event)">
+        <input type="file" accept=".xlsx,.xls,.csv" onchange="handleFileSelect(event)" id="file-input">
+        <div class="upload-icon">📊</div>
+        <div class="upload-title">엑셀 파일을 드래그하거나 클릭하여 업로드</div>
+        <div class="upload-desc">
+          지원 형식: <code>.xlsx</code> <code>.xls</code> <code>.csv</code><br>
+          권장 컬럼: 회사명, 전화번호, 업종명 (순서 무관)
+        </div>
+      </div>
+
+      <!-- Column mapping -->
+      <div class="col-map" id="col-map">
+        <div class="col-map-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>
+          열 매핑 — 엑셀 열을 항목에 연결하세요
+        </div>
+        <div class="col-map-grid" id="col-map-grid"></div>
+
+        <div class="preview-wrap" id="preview-wrap">
+          <table class="preview-table" id="preview-table"></table>
+        </div>
+
+        <div style="margin-top:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-primary btn-lg" onclick="confirmUpload()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20,6 9,17 4,12"/></svg>
+            업체 등록 완료
+          </button>
+          <button class="btn btn-outline" onclick="resetUpload()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="1,4 1,10 7,10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+            다시 선택
+          </button>
+          <span id="upload-row-count" style="font-size:12px;color:var(--text-muted)"></span>
+        </div>
+      </div>
+
+      <!-- Confirmed -->
+      <div id="upload-confirm" style="display:none;margin-top:16px;background:var(--success-bg);border:1px solid #a0d4b8;border-radius:var(--radius);padding:14px 16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+          <div style="display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;color:var(--success)">
+            ✅ <span id="confirm-text">0개 업체가 등록되었습니다</span>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-outline" onclick="resetUpload()">재업로드</button>
+            <button class="btn btn-primary" onclick="switchTab(2)">다음: 조회 설정 →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 2: 조회 설정 -->
+    <div class="step-content" id="step2">
+
+      <div class="alert alert-warn" id="no-data-alert" style="display:none">
+        ⚠️ 등록된 업체가 없습니다. <button class="sample-btn" onclick="switchTab(1)" style="color:var(--warn);font-weight:700">Step 1에서 엑셀을 먼저 업로드</button>해 주세요.
+      </div>
+
+      <!-- API Key -->
+      <div class="config-grid">
+        <div class="config-item">
+          <label>bizno.net API 키</label>
+          <input type="text" id="api-key" placeholder="API 키를 입력하세요" style="font-family:monospace;font-size:12px">
+        </div>
+        <div class="config-item">
+          <label>요청 간격 (ms)</label>
+          <select id="req-interval">
+            <option value="300">빠름 (300ms) — API 부하 주의</option>
+            <option value="500" selected>보통 (500ms) — 권장</option>
+            <option value="1000">느림 (1000ms) — 안전</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Search condition -->
+      <div class="search-cond-box">
+        <div class="search-cond-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          검색 조건 선택 — bizno.net API 조회 기준을 선택하세요
+        </div>
+        <div class="cond-options">
+          <div class="cond-option">
+            <input type="radio" name="gb" id="gb1" value="1" checked>
+            <label for="gb1">
+              <span class="cond-icon">🏢</span>
+              <span class="cond-name">상호명</span>
+              <span class="cond-desc">회사 이름으로 검색</span>
+              <span class="cond-gb">gb=1</span>
+            </label>
+          </div>
+          <div class="cond-option">
+            <input type="radio" name="gb" id="gb2" value="2">
+            <label for="gb2">
+              <span class="cond-icon">🔢</span>
+              <span class="cond-name">사업자등록번호</span>
+              <span class="cond-desc">10자리 번호로 검색</span>
+              <span class="cond-gb">gb=2</span>
+            </label>
+          </div>
+          <div class="cond-option">
+            <input type="radio" name="gb" id="gb3" value="3">
+            <label for="gb3">
+              <span class="cond-icon">👤</span>
+              <span class="cond-name">대표자명</span>
+              <span class="cond-desc">대표자 이름으로 검색</span>
+              <span class="cond-gb">gb=3</span>
+            </label>
+          </div>
+          <div class="cond-option">
+            <input type="radio" name="gb" id="gb4" value="4">
+            <label for="gb4">
+              <span class="cond-icon">📞</span>
+              <span class="cond-name">전화번호</span>
+              <span class="cond-desc">전화번호로 검색</span>
+              <span class="cond-gb">gb=4</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Column mapping for search key -->
+        <div style="margin-top:14px;padding:12px;background:#fff;border:1px solid var(--border);border-radius:var(--radius)">
+          <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">검색어로 사용할 데이터 열</div>
+          <select id="search-col" style="height:36px;border:1px solid var(--border);border-radius:var(--radius);padding:0 12px;font-size:13px;background:#fff;color:var(--text);outline:none;min-width:240px">
+            <option value="">— 업체를 먼저 등록해주세요 —</option>
+          </select>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:6px">선택한 열의 값을 위의 검색 조건으로 bizno.net에 조회합니다</div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary btn-lg" id="btn-start" onclick="startSearch()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+          전체 조회 시작
+        </button>
+        <button class="btn btn-danger" id="btn-stop" onclick="stopSearch()" disabled>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+          중지
+        </button>
+        <button class="btn btn-outline" onclick="switchTab(1)">← 업체 재등록</button>
+        <button class="btn btn-outline" onclick="switchTab(3)">결과 보기 →</button>
+      </div>
+
+      <!-- Progress (shown here too) -->
+      <div id="progress-step2" style="display:none;margin-top:20px">
+        <div class="progress-meta">
+          <span class="progress-text" id="prog-text2"></span>
+          <span class="progress-pct" id="prog-pct2">0%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" id="prog-fill2"></div></div>
+        <div class="progress-sub">
+          <span>🟢 완료: <strong id="ps2-ok">0</strong></span>
+          <span>🟡 미등록: <strong id="ps2-none">0</strong></span>
+          <span>🔴 오류: <strong id="ps2-err">0</strong></span>
+          <span>⚪ 대기: <strong id="ps2-wait">0</strong></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 3: 결과 -->
+    <div class="step-content" id="step3">
+
+      <!-- Progress -->
+      <div class="progress-section" id="progress-step3" style="display:none">
+        <div class="progress-meta">
+          <span class="progress-text" id="prog-text3">조회 중...</span>
+          <span class="progress-pct" id="prog-pct3">0%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" id="prog-fill3"></div></div>
+        <div class="progress-sub">
+          <span>🟢 완료: <strong id="ps3-ok">0</strong></span>
+          <span>🟡 미등록: <strong id="ps3-none">0</strong></span>
+          <span>🔴 오류: <strong id="ps3-err">0</strong></span>
+          <span>⚪ 대기: <strong id="ps3-wait">0</strong></span>
+        </div>
+      </div>
+
+      <!-- Action bar -->
+      <div style="padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--steel-pale)">
+        <div class="filter-label">결과 필터</div>
+        <input type="text" class="filter-input" id="f-search" placeholder="🔍 업체명 검색..." oninput="renderTable()">
+        <select class="filter-select" id="f-status" onchange="renderTable()">
+          <option value="">전체 상태</option>
+          <option value="ok">완료</option>
+          <option value="none">미등록</option>
+          <option value="err">오류</option>
+          <option value="wait">대기</option>
+        </select>
+        <select class="filter-select" id="f-hp" onchange="renderTable()">
+          <option value="">홈페이지 전체</option>
+          <option value="yes">있음</option>
+          <option value="no">없음</option>
+        </select>
+        <select class="filter-select" id="f-em" onchange="renderTable()">
+          <option value="">이메일 전체</option>
+          <option value="yes">있음</option>
+          <option value="no">없음</option>
+        </select>
+        <span class="filter-label" id="f-count" style="margin-left:auto;color:var(--navy)"></span>
+        <button class="btn btn-success" id="btn-dl" onclick="downloadCSV()" disabled>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          CSV 다운로드
+        </button>
+      </div>
+
+      <!-- Table -->
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:40px;text-align:center">#</th>
+              <th id="th-query" style="min-width:120px">회사명</th>
+              <th style="min-width:80px">전화번호</th>
+              <th style="min-width:100px">업종명</th>
+              <th style="min-width:60px">대표자</th>
+              <th style="min-width:110px">사업자번호</th>
+              <th style="min-width:180px">홈페이지</th>
+              <th style="min-width:170px">이메일</th>
+              <th style="width:72px;text-align:center">상태</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <div id="empty-state" class="empty-state">
+          <div class="ei">📋</div>
+          <p>아직 조회된 결과가 없습니다</p>
+          <p class="sub">Step 1에서 업체를 등록하고 Step 2에서 조회를 시작하세요</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  금속업체 기업정보 조회 시스템 · bizno.net API 연동 · 엑셀 업로드로 업체 등록 가능
+</footer>
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ──
+let companies = [];   // [{...원본컬럼들, _query, _phone, _biz, homepage, email, ceo, bizno, status}]
+let excelHeaders = [];
+let excelRows = [];
+let running = false;
+let stopFlag = false;
+
+const COL_MAP_FIELDS = [
+  {key:'name',  label:'회사명',       required:true,  hint:'상호명·업체명·회사명'},
+  {key:'phone', label:'전화번호',     required:false, hint:'연락처·TEL'},
+  {key:'biz',   label:'업종명',       required:false, hint:'업종·업태'},
+  {key:'ceo',   label:'대표자명',     required:false, hint:'대표·대표이사'},
+  {key:'bizno', label:'사업자번호',   required:false, hint:'사업자등록번호'},
+];
+let colMapping = {};  // {name: colIdx, phone: colIdx, ...}
+
+// ── Tab ──
+function switchTab(n){
+  [1,2,3].forEach(i=>{
+    document.getElementById('step'+i).classList.toggle('active', i===n);
+    document.getElementById('tab'+i).classList.toggle('active', i===n);
+  });
+  if(n===3) renderTable();
+}
+
+// ── Toast ──
+function showToast(msg, dur=3500){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),dur);
+}
+
+// ── Sample Download ──
+function downloadSample(){
+  const wb = XLSX.utils.book_new();
+  const data = [
+    ['회사명','전화번호','업종명','대표자명','사업자번호'],
+    ['(주)두산금속','031-793-7272','금속 문, 창, 셔터 제조업','홍길동','123-45-67890'],
+    ['광진금속','031-793-5908','기타 구조용 금속제품 제조업','김철수','234-56-78901'],
+    ['대송철강(주)','031-794-2660','1차 철강 제조업','이영희','345-67-89012'],
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{wch:20},{wch:16},{wch:28},{wch:12},{wch:16}];
+  XLSX.utils.book_append_sheet(wb, ws, '업체목록');
+  XLSX.writeFile(wb, '업체목록_샘플.xlsx');
+  showToast('📥 샘플 파일 다운로드!');
+}
+
+// ── File handling ──
+function handleDrop(e){
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if(f) processFile(f);
+}
+function handleFileSelect(e){
+  const f = e.target.files[0];
+  if(f) processFile(f);
+}
+
+function processFile(file){
+  const ext = file.name.split('.').pop().toLowerCase();
+  const reader = new FileReader();
+  reader.onload = function(e){
+    let wb;
+    if(ext==='csv'){
+      wb = XLSX.read(e.target.result, {type:'string'});
+    } else {
+      wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+    }
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const json = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+    if(json.length < 2){ showToast('⚠️ 데이터가 없는 파일입니다'); return; }
+
+    excelHeaders = json[0].map(String);
+    excelRows = json.slice(1).filter(r=>r.some(c=>String(c).trim()));
+
+    buildColMap();
+    buildPreview();
+    document.getElementById('col-map').style.display='block';
+    document.getElementById('upload-row-count').textContent = `총 ${excelRows.length}개 행 감지됨`;
+    document.getElementById('upload-zone').style.display='none';
+    showToast(`✅ ${file.name} 로드 완료 (${excelRows.length}행)`);
+  };
+  if(ext==='csv') reader.readAsText(file, 'UTF-8');
+  else reader.readAsArrayBuffer(file);
+}
+
+function autoGuessCol(key){
+  const hints = {
+    name:  ['회사','상호','업체','company','name','기업'],
+    phone: ['전화','phone','tel','연락','번호'],
+    biz:   ['업종','업태','industry','종목'],
+    ceo:   ['대표','ceo','representative','사장'],
+    bizno: ['사업자','bizno','등록번호','registration'],
+  };
+  const hs = (hints[key]||[]).map(h=>h.toLowerCase());
+  for(let i=0;i<excelHeaders.length;i++){
+    const h = excelHeaders[i].toLowerCase();
+    if(hs.some(hint=>h.includes(hint))) return i;
+  }
+  return -1;
+}
+
+function buildColMap(){
+  const grid = document.getElementById('col-map-grid');
+  colMapping = {};
+  grid.innerHTML = COL_MAP_FIELDS.map(f=>{
+    const guess = autoGuessCol(f.key);
+    const opts = excelHeaders.map((h,i)=>`<option value="${i}" ${i===guess?'selected':''}>${h}</option>`).join('');
+    if(guess>=0) colMapping[f.key]=guess;
+    return `<div class="col-map-item">
+      <div class="col-map-label">${f.label}${f.required?' *':''}</div>
+      <select class="col-map-select" id="cm-${f.key}" onchange="colMapping['${f.key}']=+this.value;buildPreview()">
+        ${f.required?'':'<option value="-1">— 해당 없음 —</option>'}
+        ${opts}
+      </select>
+      <div style="font-size:10px;color:var(--text-muted);margin-top:4px">${f.hint}</div>
+    </div>`;
+  }).join('');
+}
+
+function buildPreview(){
+  const wrap = document.getElementById('preview-table');
+  const cols = COL_MAP_FIELDS.filter(f=>colMapping[f.key]!==undefined && colMapping[f.key]>=0);
+  const head = `<thead><tr>${cols.map(f=>`<th>${f.label}</th>`).join('')}</tr></thead>`;
+  const body = excelRows.slice(0,5).map(row=>{
+    return `<tr>${cols.map(f=>`<td>${row[colMapping[f.key]]||''}</td>`).join('')}</tr>`;
+  }).join('');
+  wrap.innerHTML = head+'<tbody>'+body+'</tbody>';
+}
+
+function confirmUpload(){
+  if(colMapping['name']===undefined || colMapping['name']<0){
+    showToast('⚠️ 회사명 열을 반드시 선택해주세요'); return;
+  }
+  companies = excelRows.map(row=>({
+    _name:  String(row[colMapping['name']]||'').trim(),
+    _phone: colMapping['phone']>=0 ? String(row[colMapping['phone']]||'') : '',
+    _biz:   colMapping['biz']>=0   ? String(row[colMapping['biz']]||'')   : '',
+    _ceo:   colMapping['ceo']>=0   ? String(row[colMapping['ceo']]||'')   : '',
+    _bizno: colMapping['bizno']>=0 ? String(row[colMapping['bizno']]||'') : '',
+    homepage:'', email:'', ceo:'', bizno:'', status:'wait'
+  })).filter(c=>c._name);
+
+  // Update search col dropdown
+  const sel = document.getElementById('search-col');
+  sel.innerHTML = COL_MAP_FIELDS.map(f=>{
+    const idx = colMapping[f.key];
+    if(idx===undefined||idx<0) return '';
+    return `<option value="${f.key}">${f.label} (${excelHeaders[idx]})</option>`;
+  }).filter(Boolean).join('');
+
+  document.getElementById('col-map').style.display='none';
+  document.getElementById('upload-confirm').style.display='block';
+  document.getElementById('confirm-text').textContent=`${companies.length}개 업체가 등록되었습니다`;
+  document.getElementById('h-badge').textContent=`총 ${companies.length}개 업체`;
+  document.getElementById('sn1').textContent='✓';
+  document.getElementById('tab1').classList.add('done');
+  updateStats();
+  showToast(`✅ ${companies.length}개 업체 등록 완료!`);
+}
+
+function resetUpload(){
+  companies=[];excelHeaders=[];excelRows=[];colMapping={};
+  document.getElementById('upload-zone').style.display='block';
+  document.getElementById('col-map').style.display='none';
+  document.getElementById('upload-confirm').style.display='none';
+  document.getElementById('file-input').value='';
+  document.getElementById('h-badge').textContent='업체 미등록';
+  updateStats();
+}
+
+// ── Search ──
+function getGb(){ return document.querySelector('input[name=gb]:checked')?.value||'1'; }
+function getSearchKey(row){
+  const col = document.getElementById('search-col').value;
+  const map = {name:'_name',phone:'_phone',biz:'_biz',ceo:'_ceo',bizno:'_bizno'};
+  return (row[map[col]||'_name']||'').trim();
+}
+
+async function queryOne(idx){
+  const apiKey = document.getElementById('api-key').value.trim();
+  const gb = getGb();
+  const row = companies[idx];
+  const q = getSearchKey(row);
+  if(!q){ companies[idx].status='none'; return; }
+
+  companies[idx].status='loading';
+  renderTable(); updateStats();
+
+  try{
+    const url=`/api/proxy?key=${encodeURIComponent(apiKey)}&gb=${gb}&q=${encodeURIComponent(q)}&type=json&pagecnt=3`;
+    const resp=await fetch(url,{mode:'cors'});
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    const data=await resp.json();
+    const items=data.items||[];
+    if(!items.length){
+      companies[idx].status='none';
+    } else {
+      const item=items[0];
+      companies[idx].bizno  = item.bno||'';
+      companies[idx].ceo    = item.bustr||'';
+      const raw=item.FindX||'';
+      companies[idx].homepage=raw?(raw.startsWith('http')?raw:'http://'+raw):'';
+      companies[idx].email  =item.FindX2||item.email||'';
+      companies[idx].status ='ok';
+    }
+  }catch(e){
+    companies[idx].status='err';
+  }
+}
+
+async function startSearch(){
+  if(!companies.length){ showToast('⚠️ 먼저 업체를 등록해주세요'); switchTab(1); return; }
+  const apiKey=document.getElementById('api-key').value.trim();
+  if(!apiKey){ showToast('⚠️ API 키를 입력해주세요'); return; }
+
+  const delay=+document.getElementById('req-interval').value||500;
+  running=true; stopFlag=false;
+  document.getElementById('btn-start').disabled=true;
+  document.getElementById('btn-stop').disabled=false;
+  document.getElementById('btn-dl').disabled=true;
+  document.getElementById('progress-step2').style.display='block';
+  document.getElementById('progress-step3').style.display='block';
+
+  // Reset statuses
+  companies.forEach(c=>{c.homepage='';c.email='';c.ceo='';c.bizno='';c.status='wait'});
+
+  // Update th label
+  const gbNames={1:'상호명',2:'사업자번호',3:'대표자명',4:'전화번호'};
+  document.getElementById('th-query').textContent = companies[0]?companies[0]._name?'회사명':'조회키':'회사명';
+
+  switchTab(3);
+  for(let i=0;i<companies.length;i++){
+    if(stopFlag) break;
+    await queryOne(i);
+    updateStats();
+    renderTable();
+    await new Promise(r=>setTimeout(r,delay));
+  }
+
+  running=false; stopFlag=false;
+  document.getElementById('btn-start').disabled=false;
+  document.getElementById('btn-stop').disabled=true;
+  document.getElementById('btn-dl').disabled=false;
+  const hp=companies.filter(c=>c.homepage).length;
+  const em=companies.filter(c=>c.email).length;
+  showToast(`✅ 조회 완료! 홈페이지 ${hp}개, 이메일 ${em}개 수집`);
+}
+
+function stopSearch(){
+  stopFlag=true;
+  document.getElementById('btn-stop').disabled=true;
+  showToast('⏸ 중지 요청 — 현재 건 완료 후 정지');
+}
+
+// ── Table render ──
+function getFiltered(){
+  const q=(document.getElementById('f-search')||{}).value?.trim().toLowerCase()||'';
+  const st=(document.getElementById('f-status')||{}).value||'';
+  const hp=(document.getElementById('f-hp')||{}).value||'';
+  const em=(document.getElementById('f-em')||{}).value||'';
+  return companies.filter(r=>{
+    if(q && !r._name.toLowerCase().includes(q)) return false;
+    if(st && r.status!==st) return false;
+    if(hp==='yes'&&!r.homepage) return false;
+    if(hp==='no'&&r.homepage) return false;
+    if(em==='yes'&&!r.email) return false;
+    if(em==='no'&&r.email) return false;
+    return true;
+  });
+}
+
+function renderTable(){
+  const filtered=getFiltered();
+  const tbody=document.getElementById('tbody');
+  const empty=document.getElementById('empty-state');
+  const fcEl=document.getElementById('f-count');
+  if(fcEl) fcEl.textContent=`${filtered.length}개 표시`;
+
+  if(!filtered.length){
+    tbody.innerHTML='';
+    if(empty) empty.style.display='block';
+    return;
+  }
+  if(empty) empty.style.display='none';
+
+  tbody.innerHTML=filtered.map((r,fi)=>{
+    const origIdx=companies.indexOf(r);
+    let badge='';
+    if(r.status==='wait') badge='<span class="badge badge-wait">대기</span>';
+    else if(r.status==='loading') badge='<span class="badge badge-loading"><span class="spinner"></span> 조회중</span>';
+    else if(r.status==='ok') badge='<span class="badge badge-ok">✓ 완료</span>';
+    else if(r.status==='none') badge='<span class="badge badge-none">미등록</span>';
+    else if(r.status==='err') badge='<span class="badge badge-err">오류</span>';
+
+    const hp=r.homepage?`<a class="link" href="${r.homepage}" target="_blank" rel="noopener">${r.homepage.replace(/^https?:\/\//,'').replace(/\/$/,'').slice(0,30)}</a>`:'<span class="dash">—</span>';
+    const em=r.email?`<a class="link" href="mailto:${r.email}">${r.email}</a>`:'<span class="dash">—</span>';
+
+    return `<tr class="status-${r.status}">
+      <td class="num">${origIdx+1}</td>
+      <td class="name">${r._name}</td>
+      <td class="muted">${r._phone||'<span class="dash">—</span>'}</td>
+      <td class="muted" style="font-size:11px">${r._biz||'<span class="dash">—</span>'}</td>
+      <td class="muted">${r.ceo||r._ceo||'<span class="dash">—</span>'}</td>
+      <td class="muted" style="font-family:monospace;font-size:11px">${r.bizno||r._bizno||'<span class="dash">—</span>'}</td>
+      <td>${hp}</td>
+      <td>${em}</td>
+      <td style="text-align:center">${badge}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Stats ──
+function updateStats(){
+  const total=companies.length;
+  const done=companies.filter(c=>['ok','none','err'].includes(c.status)).length;
+  const ok=companies.filter(c=>c.status==='ok').length;
+  const none=companies.filter(c=>c.status==='none').length;
+  const err=companies.filter(c=>c.status==='err').length;
+  const wait=companies.filter(c=>c.status==='wait').length;
+  const hp=companies.filter(c=>c.homepage).length;
+  const em=companies.filter(c=>c.email).length;
+  const pct=total?Math.round(done/total*100):0;
+
+  document.getElementById('s-total').textContent=total;
+  document.getElementById('s-done').textContent=done;
+  document.getElementById('s-hp').textContent=hp;
+  document.getElementById('s-email').textContent=em;
+  document.getElementById('s-fail').textContent=none+err;
+
+  const txt=done===0?'조회 대기중':done<total?`${done}/${total} 진행중`:`✅ 전체 완료`;
+  ['2','3'].forEach(n=>{
+    const pf=document.getElementById('prog-fill'+n);
+    const pt=document.getElementById('prog-text'+n);
+    const pp=document.getElementById('prog-pct'+n);
+    if(pf) pf.style.width=pct+'%';
+    if(pt) pt.textContent=txt;
+    if(pp) pp.textContent=pct+'%';
+    if(document.getElementById('ps'+n+'-ok')) document.getElementById('ps'+n+'-ok').textContent=ok;
+    if(document.getElementById('ps'+n+'-none')) document.getElementById('ps'+n+'-none').textContent=none;
+    if(document.getElementById('ps'+n+'-err')) document.getElementById('ps'+n+'-err').textContent=err;
+    if(document.getElementById('ps'+n+'-wait')) document.getElementById('ps'+n+'-wait').textContent=wait;
+  });
+}
+
+// ── CSV Download ──
+function downloadCSV(){
+  const header=['번호','회사명','전화번호','업종명','대표자','사업자번호','홈페이지','이메일','상태'];
+  const rows=companies.map((r,i)=>[
+    i+1,r._name,r._phone,r._biz,
+    r.ceo||r._ceo,r.bizno||r._bizno,
+    r.homepage,r.email,
+    {ok:'완료',none:'미등록',err:'오류',wait:'대기',loading:'조회중'}[r.status]||''
+  ]);
+  const csv=[header,...rows].map(row=>row.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='금속업체_기업정보_조회결과.csv';
+  a.click();
+  showToast('📥 CSV 다운로드 시작!');
+}
+
+// init
+updateStats();
+renderTable();
+</script>
+</body>
+</html>
+HTMLEOF
