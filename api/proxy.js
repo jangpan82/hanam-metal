@@ -8,7 +8,8 @@ export default async function handler(req, res) {
   if (!key || !q) { res.status(400).json({ error: 'key and q are required' }); return; }
 
   try {
-    const url = `https://bizno.net/api/fapi?key=${encodeURIComponent(key)}&gb=${gb||1}&q=${encodeURIComponent(q)}&type=json&pagecnt=${pagecnt}`;
+    // key는 인코딩 없이 그대로, q만 인코딩
+    const url = `https://bizno.net/api/fapi?key=${key}&gb=${gb||1}&q=${encodeURIComponent(q)}&type=json&pagecnt=${pagecnt}`;
     const response = await fetch(url, {
       headers: { 'User-Agent': 'Mozilla/5.0' }
     });
