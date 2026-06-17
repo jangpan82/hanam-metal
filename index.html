@@ -219,7 +219,7 @@ a.link:hover{text-decoration:underline;color:var(--accent)}
       </div>
       <div>
         <div class="logo-text">금속업체 조회 시스템</div>
-        <div class="logo-sub">bizno.net API 연동</div>
+        <div class="logo-sub">네이버 검색 API 연동</div>
       </div>
     </a>
     <div class="header-right">
@@ -232,7 +232,7 @@ a.link:hover{text-decoration:underline;color:var(--accent)}
 <div class="hero">
   <div class="hero-eyebrow">Business Info Lookup · bizno.net API</div>
   <h1>금속업체 <span>기업정보</span> 조회 시스템</h1>
-  <p>엑셀 업로드로 업체를 등록하고 상호명·전화번호·대표자·사업자번호로 일괄 조회합니다</p>
+  <p>엑셀 업로드로 업체를 등록하고 네이버 검색 API로 홈페이지·이메일·주소를 자동 수집합니다</p>
 </div>
 
 <!-- Main -->
@@ -348,74 +348,40 @@ a.link:hover{text-decoration:underline;color:var(--accent)}
         ⚠️ 등록된 업체가 없습니다. <button class="sample-btn" onclick="switchTab(1)" style="color:var(--warn);font-weight:700">Step 1에서 엑셀을 먼저 업로드</button>해 주세요.
       </div>
 
-      <!-- API Key -->
-      <div class="config-grid">
-        <div class="config-item">
-          <label>bizno.net API 키</label>
-          <input type="text" id="api-key" placeholder="API 키를 입력하세요" style="font-family:monospace;font-size:12px">
-        </div>
-        <div class="config-item">
-          <label>요청 간격 (ms)</label>
-          <select id="req-interval">
-            <option value="300">빠름 (300ms) — API 부하 주의</option>
-            <option value="500" selected>보통 (500ms) — 권장</option>
-            <option value="1000">느림 (1000ms) — 안전</option>
-          </select>
+      <!-- 네이버 검색 안내 -->
+      <div class="alert alert-info" style="margin-bottom:20px">
+        <span>🔍</span>
+        <div>
+          <strong>네이버 검색 API</strong>로 업체명을 검색하여 홈페이지·이메일·주소·전화번호를 자동 수집합니다.<br>
+          <span style="font-size:11px;color:var(--steel)">※ 네이버에 등록되지 않은 소규모 업체는 결과가 없을 수 있습니다.</span>
         </div>
       </div>
 
-      <!-- Search condition -->
+      <!-- 조회 설정 -->
       <div class="search-cond-box">
         <div class="search-cond-title">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          검색 조건 선택 — bizno.net API 조회 기준을 선택하세요
+          검색어로 사용할 열 선택
         </div>
-        <div class="cond-options">
-          <div class="cond-option">
-            <input type="radio" name="gb" id="gb1" value="1" checked>
-            <label for="gb1">
-              <span class="cond-icon">🏢</span>
-              <span class="cond-name">상호명</span>
-              <span class="cond-desc">회사 이름으로 검색</span>
-              <span class="cond-gb">gb=1</span>
-            </label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">검색어 열</div>
+            <select id="search-col" style="width:100%;height:36px;border:1px solid var(--border);border-radius:var(--radius);padding:0 12px;font-size:13px;background:#fff;color:var(--text);outline:none;">
+              <option value="">— 업체를 먼저 등록해주세요 —</option>
+            </select>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px">회사명 열을 선택하면 가장 정확합니다</div>
           </div>
-          <div class="cond-option">
-            <input type="radio" name="gb" id="gb2" value="2">
-            <label for="gb2">
-              <span class="cond-icon">🔢</span>
-              <span class="cond-name">사업자등록번호</span>
-              <span class="cond-desc">10자리 번호로 검색</span>
-              <span class="cond-gb">gb=2</span>
-            </label>
-          </div>
-          <div class="cond-option">
-            <input type="radio" name="gb" id="gb3" value="3">
-            <label for="gb3">
-              <span class="cond-icon">👤</span>
-              <span class="cond-name">대표자명</span>
-              <span class="cond-desc">대표자 이름으로 검색</span>
-              <span class="cond-gb">gb=3</span>
-            </label>
-          </div>
-          <div class="cond-option">
-            <input type="radio" name="gb" id="gb4" value="4">
-            <label for="gb4">
-              <span class="cond-icon">📞</span>
-              <span class="cond-name">전화번호</span>
-              <span class="cond-desc">전화번호로 검색</span>
-              <span class="cond-gb">gb=4</span>
-            </label>
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">요청 간격</div>
+            <select id="req-interval" style="width:100%;height:36px;border:1px solid var(--border);border-radius:var(--radius);padding:0 12px;font-size:13px;background:#fff;color:var(--text);outline:none;">
+              <option value="500">빠름 (500ms)</option>
+              <option value="1000" selected>보통 (1000ms) — 권장</option>
+              <option value="2000">느림 (2000ms) — 안전</option>
+            </select>
           </div>
         </div>
-
-        <!-- Column mapping for search key -->
-        <div style="margin-top:14px;padding:12px;background:#fff;border:1px solid var(--border);border-radius:var(--radius)">
-          <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">검색어로 사용할 데이터 열</div>
-          <select id="search-col" style="height:36px;border:1px solid var(--border);border-radius:var(--radius);padding:0 12px;font-size:13px;background:#fff;color:var(--text);outline:none;min-width:240px">
-            <option value="">— 업체를 먼저 등록해주세요 —</option>
-          </select>
-          <div style="font-size:11px;color:var(--text-muted);margin-top:6px">선택한 열의 값을 위의 검색 조건으로 bizno.net에 조회합니다</div>
+        <div style="padding:10px 12px;background:#fff;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;color:var(--text-muted)">
+          💡 검색 방식: <strong style="color:var(--navy)">[회사명 + 홈페이지]</strong> 로 네이버 웹 검색 → 공식 사이트 URL 추출 / <strong style="color:var(--navy)">[회사명]</strong> 으로 네이버 지역 검색 → 주소·전화번호 보완
         </div>
       </div>
 
@@ -503,8 +469,7 @@ a.link:hover{text-decoration:underline;color:var(--accent)}
               <th id="th-query" style="min-width:120px">회사명</th>
               <th style="min-width:80px">전화번호</th>
               <th style="min-width:100px">업종명</th>
-              <th style="min-width:60px">대표자</th>
-              <th style="min-width:110px">사업자번호</th>
+              <th style="min-width:160px">주소</th>
               <th style="min-width:180px">홈페이지</th>
               <th style="min-width:170px">이메일</th>
               <th style="width:72px;text-align:center">상태</th>
@@ -523,7 +488,7 @@ a.link:hover{text-decoration:underline;color:var(--accent)}
 </main>
 
 <footer class="site-footer">
-  금속업체 기업정보 조회 시스템 · bizno.net API 연동 · 엑셀 업로드로 업체 등록 가능
+  금속업체 기업정보 조회 시스템 · 네이버 검색 API 연동 · 엑셀 업로드로 업체 등록 가능
 </footer>
 <div class="toast" id="toast"></div>
 
@@ -670,7 +635,7 @@ function confirmUpload(){
     _biz:   colMapping['biz']>=0   ? String(row[colMapping['biz']]||'')   : '',
     _ceo:   colMapping['ceo']>=0   ? String(row[colMapping['ceo']]||'')   : '',
     _bizno: colMapping['bizno']>=0 ? String(row[colMapping['bizno']]||'') : '',
-    homepage:'', email:'', ceo:'', bizno:'', status:'wait'
+    homepage:'', email:'', address:'', ceo:'', bizno:'', status:'wait'
   })).filter(c=>c._name);
 
   // Update search col dropdown
@@ -710,8 +675,6 @@ function getSearchKey(row){
 }
 
 async function queryOne(idx){
-  const apiKey = document.getElementById('api-key').value.trim();
-  const gb = getGb();
   const row = companies[idx];
   const q = getSearchKey(row);
   if(!q){ companies[idx].status='none'; return; }
@@ -720,21 +683,24 @@ async function queryOne(idx){
   renderTable(); updateStats();
 
   try{
-    const url=`/api/proxy?key=${encodeURIComponent(apiKey)}&gb=${gb}&q=${encodeURIComponent(q)}&type=json&pagecnt=3`;
-    const resp=await fetch(url,{mode:'cors'});
+    const url=`/api/naver?q=${encodeURIComponent(q)}`;
+    const resp=await fetch(url);
     if(!resp.ok) throw new Error('HTTP '+resp.status);
     const data=await resp.json();
-    const items=data.items||[];
-    if(!items.length){
+    if(data.error){ companies[idx].status='err'; return; }
+
+    companies[idx].homepage = data.homepage || '';
+    companies[idx].email    = data.email    || '';
+    companies[idx].address  = data.address  || '';
+    // 전화번호: 네이버 지역검색 결과가 있으면 보완
+    if(data.telephone && !companies[idx]._phone){
+      companies[idx]._phone = data.telephone;
+    }
+    // 결과가 하나도 없으면 미등록
+    if(!data.homepage && !data.email && !data.address && data.webCount===0){
       companies[idx].status='none';
     } else {
-      const item=items[0];
-      companies[idx].bizno  = item.bno||'';
-      companies[idx].ceo    = item.bustr||'';
-      const raw=item.FindX||'';
-      companies[idx].homepage=raw?(raw.startsWith('http')?raw:'http://'+raw):'';
-      companies[idx].email  =item.FindX2||item.email||'';
-      companies[idx].status ='ok';
+      companies[idx].status='ok';
     }
   }catch(e){
     companies[idx].status='err';
@@ -743,8 +709,6 @@ async function queryOne(idx){
 
 async function startSearch(){
   if(!companies.length){ showToast('⚠️ 먼저 업체를 등록해주세요'); switchTab(1); return; }
-  const apiKey=document.getElementById('api-key').value.trim();
-  if(!apiKey){ showToast('⚠️ API 키를 입력해주세요'); return; }
 
   const delay=+document.getElementById('req-interval').value||500;
   running=true; stopFlag=false;
@@ -755,7 +719,7 @@ async function startSearch(){
   document.getElementById('progress-step3').style.display='block';
 
   // Reset statuses
-  companies.forEach(c=>{c.homepage='';c.email='';c.ceo='';c.bizno='';c.status='wait'});
+  companies.forEach(c=>{c.homepage='';c.email='';c.address='';c.ceo='';c.bizno='';c.status='wait'});
 
   // Update th label
   const gbNames={1:'상호명',2:'사업자번호',3:'대표자명',4:'전화번호'};
@@ -833,8 +797,7 @@ function renderTable(){
       <td class="name">${r._name}</td>
       <td class="muted">${r._phone||'<span class="dash">—</span>'}</td>
       <td class="muted" style="font-size:11px">${r._biz||'<span class="dash">—</span>'}</td>
-      <td class="muted">${r.ceo||r._ceo||'<span class="dash">—</span>'}</td>
-      <td class="muted" style="font-family:monospace;font-size:11px">${r.bizno||r._bizno||'<span class="dash">—</span>'}</td>
+      <td class="muted" style="font-size:11px">${r.address||'<span class="dash">—</span>'}</td>
       <td>${hp}</td>
       <td>${em}</td>
       <td style="text-align:center">${badge}</td>
@@ -877,10 +840,10 @@ function updateStats(){
 
 // ── CSV Download ──
 function downloadCSV(){
-  const header=['번호','회사명','전화번호','업종명','대표자','사업자번호','홈페이지','이메일','상태'];
+  const header=['번호','회사명','전화번호','업종명','주소','홈페이지','이메일','상태'];
   const rows=companies.map((r,i)=>[
     i+1,r._name,r._phone,r._biz,
-    r.ceo||r._ceo,r.bizno||r._bizno,
+    r.address||'',
     r.homepage,r.email,
     {ok:'완료',none:'미등록',err:'오류',wait:'대기',loading:'조회중'}[r.status]||''
   ]);
